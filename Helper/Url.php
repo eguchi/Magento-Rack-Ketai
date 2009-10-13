@@ -40,10 +40,11 @@ class Rack_Ketai_Helper_Url extends Mage_Core_Helper_Url
         return $this->_getUrl('ketai/checkout/login', array('_secure'=>true, '_current'=>true));
     }
 
-    public function getMSAddressesUrl()
+    /*public function getMSAddressesUrl()
     {
         return $this->_getUrl('ketai/checkout/addresses');
     }
+    */
 
     public function getMSShippingAddressSavedUrl()
     {
