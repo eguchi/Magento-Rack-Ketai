@@ -1,11 +1,12 @@
 <?php
 class Rack_Ketai_Model_Type_Checkout_State extends Varien_Object
 {
-    const STEP_SELECT_ADDRESSES = 'checkout_addresses';
     const STEP_SHIPPING         = 'checkout_shipping';
     const STEP_BILLING          = 'checkout_billing';
     const STEP_OVERVIEW         = 'checkout_overview';
     const STEP_SUCCESS          = 'checkout_success';
+    const STEP_SHIPPINGMETHOD   = 'checkout_shippingmethod';
+    const STEP_PAYMENTMETHOD    = 'checkout_paymentmethod';
 
     /**
      * Allow steps array
@@ -24,9 +25,6 @@ class Rack_Ketai_Model_Type_Checkout_State extends Varien_Object
     {
         parent::__construct();
         $this->_steps = array(
-            self::STEP_SELECT_ADDRESSES => new Varien_Object(array(
-                'label' => Mage::helper('checkout')->__('Select Addresses')
-            )),
             self::STEP_SHIPPING => new Varien_Object(array(
                 'label' => Mage::helper('checkout')->__('Shipping Information')
             )),
@@ -65,7 +63,7 @@ class Rack_Ketai_Model_Type_Checkout_State extends Varien_Object
         if (isset($this->_steps[$step])) {
             return $step;
         }
-        return self::STEP_SELECT_ADDRESSES;
+        return self::STEP_SHIPPING;
     }
 
     public function setActiveStep($step)
@@ -74,7 +72,7 @@ class Rack_Ketai_Model_Type_Checkout_State extends Varien_Object
             $this->getCheckoutSession()->setCheckoutState($step);
         }
         else {
-            $this->getCheckoutSession()->setCheckoutState(self::STEP_SELECT_ADDRESSES);
+            $this->getCheckoutSession()->setCheckoutState(self::STEP_SHIPPING);
         }
 
         // Fix active step changing
