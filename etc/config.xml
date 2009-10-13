@@ -6,13 +6,24 @@
     </modules>
     <global>
         <models>
+            <ketai>
+                <class>Rack_Ketai_Model</class>
+            </ketai>
             <core>
                  <rewrite>
                       <design_package>Rack_Ketai_Model_Design</design_package>
                  </rewrite>
             </core>
         </models>
+        <helpers>
+            <ketai>
+                <class>Rack_Ketai_Helper</class>
+            </ketai>
+        </helpers>
         <blocks>
+            <ketai>
+                <class>Rack_Ketai_Block</class>
+            </ketai>
             <catalog>
                 <rewrite>
                     <navigation>Rack_Ketai_Block_Catalog_Navigation</navigation>
@@ -20,6 +31,24 @@
             </catalog>
         </blocks>
     </global>
+    <frontend>
+        <routers>
+            <ketai>
+                <use>standard</use>
+                <args>
+                    <module>Rack_Ketai</module>
+                    <frontName>ketai</frontName>
+                </args>
+            </ketai>
+        </routers>
+        <layout>
+            <updates>
+                <ketai>
+                    <file>rack_ketai.xml</file>
+                </ketai>
+            </updates>
+        </layout>
+    </frontend>
     <default>
         <ketai>
             <ketai>
