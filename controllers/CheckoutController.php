@@ -84,7 +84,7 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
         $this->_getCheckout()->getCheckoutSession()->setCheckoutState(
             Mage_Checkout_Model_Session::CHECKOUT_STATE_BEGIN
         );
-        $this->_redirect('*/*/shipping');
+        $this->_redirect('*/*/billing');
     }
 
     /**
@@ -131,6 +131,7 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
     {
         $this->loadLayout();
         $this->_initLayoutMessages('customer/session');
+        $this->_initLayoutMessages('checkout/session');
         $this->renderLayout();
     }
 
@@ -138,6 +139,11 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
     {
         $this->loadLayout();
         $this->_initLayoutMessages('customer/session');
+        $this->_initLayoutMessages('checkout/session');
+        if ($billingForm = $this->getLayout()->getBlock('customer_form_address')) {
+            $billingForm->setCreateAccountUrl($this->_getHelper()->getMSRegisterUrl());
+        }
+
         $this->renderLayout();
     }
 
@@ -145,6 +151,10 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
     {
         $this->loadLayout();
         $this->_initLayoutMessages('customer/session');
+        $this->_initLayoutMessages('checkout/session');
+        if($shippingForm = $this->getLayout()->getBlock('customer_form_address')) {
+            $shippingForm->setCreateAccountUrl($this->_getHelper()->getMSRegisterUrl());
+        }
         $this->renderLayout();
     }
 
@@ -152,6 +162,7 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
     {
         $this->loadLayout();
         $this->_initLayoutMessages('customer/session');
+        $this->_initLayoutMessages('checkout/session');
         $this->renderLayout();
     }
 
@@ -159,6 +170,7 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
     {
         $this->loadLayout();
         $this->_initLayoutMessages('customer/session');
+        $this->_initLayoutMessages('checkout/session');
         $this->renderLayout();
     }
 
@@ -166,17 +178,59 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
     {
         $this->loadLayout();
         $this->_initLayoutMessages('customer/session');
+        $this->_initLayoutMessages('checkout/session');
         $this->renderLayout();
     }
 
     public function shippingPostAction()
     {
-        $this->_redirect('*/*/billing/');
+        if ($this->getRequest()->isPost()) {
+            $data = $this->getRequest()->getPost('shipping', array());
+            $customerAddressId = $this->getRequest()->getPost('shipping_address_id', false);
+            $result = $this->getOnepage()->saveShipping($data, $customerAddressId);
+
+            if (!isset($result['error'])) {
+                $this->_redirect('*/*/shippingmethod');
+            } elseif (isset($data['same_as_billing']) && ($data['same_as_billing'] == 1)){
+                $this->_redirect('*/*/shippingmethod');
+            } else {
+                foreach($result['message'] as $_error => $_message) {
+                    Mage::getSingleton('checkout/session')->addError($_message);
+                }
+                $this->_redirect('*/*/shipping');
+            }
+        } else {
+            $this->_redirect('*/*/shipping/');
+        }
     }
 
     public function billingPostAction()
     {
-        $this->_redirect('*/*/shippingmethod/');
+        if ($this->getRequest()->isPost()) {
+            $data = $this->getRequest()->getPost('billing', array());
+            $customerAddressId = $this->getRequest()->getPost('billing_address_id', false);
+            $result = $this->getOnepage()->saveBilling($data, $customerAddressId);
+
+            if (!isset($result['error'])) {
+                /* check quote for virtual */
+                if ($this->getOnepage()->getQuote()->isVirtual()) {
+                    $this->_redirect('*/*/paymentmethod');
+                }
+                elseif (isset($data['use_for_shipping']) && $data['use_for_shipping'] == 1) {
+                    $this->_redirect('*/*/shippingmethod');
+                }
+                else {
+                    $this->_redirect('*/*/shipping/');
+                }
+            } else {
+                foreach($result['message'] as $_error => $_message) {
+                    Mage::getSingleton('checkout/session')->addError($_message);
+                }
+                $this->_redirect('*/*/billing');
+            }
+        } else {
+            $this->_redirect('*/*/billing');
+        }
     }
 
     public function shippingmethodPostAction()
@@ -192,5 +246,10 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
     public function saveAction()
     {
         $this->_redirect('*/*/success');
+    }
+
+    public function getOnepage()
+    {
+        return Mage::getSingleton('ketai/type_onepage');
     }
 }
