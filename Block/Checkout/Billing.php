@@ -1,131 +1,109 @@
 <?php
-/**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @category   Mage
- * @package    Mage_Checkout
- * @copyright  Copyright (c) 2008 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
- */
-
-/**
- * Multishipping billing information
- *
- * @category   Mage
- * @package    Mage_Checkout
- * @author      Magento Core Team <core@magentocommerce.com>
- */
-class Mage_Checkout_Block_Multishipping_Billing extends Mage_Payment_Block_Form_Container
+class Rack_Ketai_Block_Checkout_Billing extends Mage_Checkout_Block_Onepage_Abstract
 {
-    /**
-     * Prepare children blocks
-     */
-    protected function _prepareLayout()
+    protected function _construct()
     {
-        if ($headBlock = $this->getLayout()->getBlock('head')) {
-            $headBlock->setTitle(
-                Mage::helper('checkout')->__('Billing Information - %s', $headBlock->getDefaultTitle())
-            );
-        }
+        $this->getCheckout()->setStepData('billing', array(
+            'label'     => Mage::helper('checkout')->__('Billing Information'),
+            'is_show'   => $this->isShow()
+        ));
 
-        return parent::_prepareLayout();
+        if ($this->isCustomerLoggedIn()) {
+            $this->getCheckout()->setStepData('billing', 'allow', true);
+        }
+        parent::_construct();
     }
 
-    /**
-     * Check and prepare payment method model
-     *
-     * @return bool
-     */
-    protected function _canUseMethod($method)
+    public function isUseBillingAddressForShipping()
     {
-        if (!$method->canUseForMultishipping()) {
+        if (($this->getQuote()->getIsVirtual())
+            || !$this->getQuote()->getShippingAddress()->getSameAsBilling()) {
             return false;
         }
-        return parent::_canUseMethod($method);
+        return true;
     }
 
-    /**
-     * Retrieve code of current payment method
-     *
-     * @return mixed
-     */
-    public function getSelectedMethodCode()
+    public function getCountries()
     {
-        if ($method = $this->getQuote()->getPayment()->getMethod()) {
-            return $method;
+        return Mage::getResourceModel('directory/country_collection')->loadByStore();
+    }
+
+    public function getMethod()
+    {
+        return $this->getQuote()->getCheckoutMethod();
+    }
+
+    function getAddress() {
+        if (!$this->isCustomerLoggedIn()) {
+            return $this->getQuote()->getBillingAddress();
+        } else {
+            return Mage::getModel('sales/quote_address');
         }
-        return false;
     }
 
-    /**
-     * Retrieve billing address
-     *
-     * @return Mage_Sales_Model_Quote_Address
-     */
-    public function getAddress()
+    public function getFirstname()
     {
-        $address = $this->getData('address');
-        if (is_null($address)) {
-            $address = Mage::getSingleton('checkout/type_multishipping')->getQuote()->getBillingAddress();
-            $this->setData('address', $address);
+        $firstname = $this->getAddress()->getFirstname();
+        if (empty($firstname) && $this->getQuote()->getCustomer()) {
+            return $this->getQuote()->getCustomer()->getFirstname();
         }
-        return $address;
+        return $firstname;
     }
 
-    /**
-     * Retrieve quote model object
-     *
-     * @return Mage_Sales_Model_Quote
-     */
-    public function getQuote()
+    public function getLastname()
     {
-        return Mage::getSingleton('checkout/session')->getQuote();
+        $lastname = $this->getAddress()->getLastname();
+        if (empty($lastname) && $this->getQuote()->getCustomer()) {
+            return $this->getQuote()->getCustomer()->getLastname();
+        }
+        return $lastname;
     }
 
-    /**
-     * Retrieve url for select billing address
-     *
-     * @return string
-     */
-    public function getSelectAddressUrl()
+    public function canShip()
     {
-        return $this->getUrl('*/multishipping_address/selectBilling');
+        return !$this->getQuote()->isVirtual();
     }
 
-    /**
-     * Retrieve data post destination url
-     *
-     * @return string
-     */
-    public function getPostActionUrl()
+    public function getSaveUrl()
     {
-        //return $this->getUrl('*/*/billingPost');
-        return $this->getUrl('*/*/overview');
+        return $this->getUrl("*/*/billingPost");
     }
 
-    /**
-     * Retrieve back url
-     *
-     * @return string
-     */
-    public function getBackUrl()
+    public function getAddressesHtmlRadio($type)
     {
-        return $this->getUrl('*/*/backtoshipping');
+        if ($this->isCustomerLoggedIn()) {
+            $options = array();
+            foreach ($this->getCustomer()->getAddresses() as $address) {
+                $options[] = array(
+                    'value'=>$address->getId(),
+                    'label'=>$address->format('oneline')
+                );
+            }
+
+            $addressId = $this->getAddress()->getId();
+            if (empty($addressId)) {
+                if ($type=='billing') {
+                    $address = $this->getCustomer()->getPrimaryBillingAddress();
+                } else {
+                    $address = $this->getCustomer()->getPrimaryShippingAddress();
+                }
+                if ($address) {
+                    $addressId = $address->getId();
+                }
+            }
+
+            $select = $this->getLayout()->createBlock('ketai/checkout_html_radio')
+                ->setName($type.'_address_id')
+                ->setId($type.'-address-raido')
+                ->setClass('address-raido')
+                ->setDefaultValue($addressId)
+                ->setOptions($options);
+
+            //$select->addOption('', Mage::helper('checkout')->__('New Address'));
+
+            return $select->getHtml();
+        }
+        return '';
     }
+
 }
