@@ -235,12 +235,47 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
 
     public function shippingmethodPostAction()
     {
-        $this->_redirect('*/*/paymentmethod/');
+         if ($this->getRequest()->isPost()) {
+            $data = $this->getRequest()->getPost('shipping_method', '');
+            $result = $this->getOnepage()->saveShippingMethod($data);
+            
+            if(!$result) {
+                Mage::dispatchEvent('checkout_controller_onepage_save_shipping_method', array('request'=>$this->getRequest(), 'quote'=>$this->getOnepage()->getQuote()));
+                $this->_redirect('*/*/paymentmethod');
+            } else {
+                $this->_redirect('*/*/shippingmethod');
+            }
+         } else {
+            $this->_redirect('*/*/shippingmethod/');
+         }
     }
 
     public function paymentmethodPostAction()
     {
-        $this->_redirect('*/*/overview/');
+        if ($this->getRequest()->isPost()) {
+            $data = $this->getRequest()->getPost('payment', array());
+
+            try {
+                $result = $this->getOnepage()->savePayment($data);
+            }
+            catch (Mage_Payment_Exception $e) {
+                if ($e->getFields()) {
+                    $result['fields'] = $e->getFields();
+                }
+                $result['error'] = $e->getMessage();
+            }
+            catch (Exception $e) {
+                $result['error'] = $e->getMessage();
+            }
+            
+            if (empty($result['error'])) {
+                $this->_redirect('*/*/overview');
+            } else {
+                $this->_redirect('*/*/paymentmethod');
+            }
+        } else {
+            $this->_redirect('*/*/overview/');
+        }
     }
 
     public function saveAction()
