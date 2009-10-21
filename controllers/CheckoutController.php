@@ -280,7 +280,60 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
 
     public function saveAction()
     {
-        $this->_redirect('*/*/success');
+        $result = array();
+        try {
+            if ($requiredAgreements = Mage::helper('checkout')->getRequiredAgreementIds()) {
+                $postedAgreements = array_keys($this->getRequest()->getPost('agreement', array()));
+                if ($diff = array_diff($requiredAgreements, $postedAgreements)) {
+                    $result['messages'][] = $this->__('Please agree to all Terms and Conditions before placing the order.');
+                    foreach($result['message'] as $_error => $_message) {
+                        Mage::getSingleton('checkout/session')->addError($_message);
+                    }
+                    return;
+                }
+            }
+            if ($data = $this->getRequest()->getPost('payment', false)) {
+                $this->getOnepage()->getQuote()->getPayment()->importData($data);
+            }
+            $this->getOnepage()->saveOrder();
+            $this->_redirect('*/*/success');
+        }
+        catch (Mage_Core_Exception $e) {
+            Mage::logException($e);
+            Mage::helper('checkout')->sendPaymentFailedEmail($this->getOnepage()->getQuote(), $e->getMessage());
+            $result['error_messages'] = $e->getMessage();
+
+            if ($gotoSection = $this->getOnepage()->getCheckout()->getGotoSection()) {
+                $result['goto_section'] = $gotoSection;
+                $this->getOnepage()->getCheckout()->setGotoSection(null);
+            }
+
+            if ($updateSection = $this->getOnepage()->getCheckout()->getUpdateSection()) {
+                if (isset($this->_sectionUpdateFunctions[$updateSection])) {
+                    $updateSectionFunction = $this->_sectionUpdateFunctions[$updateSection];
+                    $result['update_section'] = array(
+                        'name' => $updateSection,
+                        'html' => $this->$updateSectionFunction()
+                    );
+                }
+            }
+            
+            if(is_array($result['error_messages'])) {
+                foreach($result['error_messages'] as $_error => $_message) {
+                    Mage::getSingleton('checkout/session')->addError($_message);
+                }
+            } else {
+                Mage::getSingleton('checkout/session')->addError($result['error_messages']);
+            }
+            
+            $this->getOnepage()->getQuote()->save();
+            $this->_redirect('*/*/overview');
+        }
+        catch (Exception $e) {
+            Mage::logException($e);
+            Mage::helper('checkout')->sendPaymentFailedEmail($this->getOnepage()->getQuote(), $e->getMessage());
+            $this->_redirect('*/*/overview');
+        }
     }
 
     public function getOnepage()

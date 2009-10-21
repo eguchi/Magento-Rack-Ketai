@@ -1,5 +1,5 @@
 <?php
-class Rack_Ketai_Block_Checkout_Link extends Mage_Core_Block_Template
+class Rack_Ketai_Block_Checkout_Link extends Mage_Checkout_Block_Onepage_Link
 {
     public function getCheckoutUrl()
     {
