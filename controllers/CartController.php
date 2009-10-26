@@ -57,7 +57,7 @@ class Rack_Ketai_CartController extends Mage_Core_Controller_Front_Action
             if (($this->getRequest()->getActionName() == 'add') && !$this->getRequest()->getParam('in_cart')) {
                 $this->_getSession()->setContinueShoppingUrl($this->_getRefererUrl());
             }
-            $this->_redirect('checkout/cart');
+            $this->_redirect('ketai/cart');
         }
         return $this;
     }

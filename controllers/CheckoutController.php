@@ -187,7 +187,7 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
         if ($this->getRequest()->isPost()) {
             $data = $this->getRequest()->getPost('shipping', array());
             $customerAddressId = $this->getRequest()->getPost('shipping_address_id', false);
-            $result = $this->getOnepage()->saveShipping($data, $customerAddressId);
+            $result = $this->getKetai()->saveShipping($data, $customerAddressId);
 
             if (!isset($result['error'])) {
                 $this->_redirect('*/*/shippingmethod');
@@ -209,11 +209,11 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
         if ($this->getRequest()->isPost()) {
             $data = $this->getRequest()->getPost('billing', array());
             $customerAddressId = $this->getRequest()->getPost('billing_address_id', false);
-            $result = $this->getOnepage()->saveBilling($data, $customerAddressId);
+            $result = $this->getKetai()->saveBilling($data, $customerAddressId);
 
             if (!isset($result['error'])) {
                 /* check quote for virtual */
-                if ($this->getOnepage()->getQuote()->isVirtual()) {
+                if ($this->getKetai()->getQuote()->isVirtual()) {
                     $this->_redirect('*/*/paymentmethod');
                 }
                 elseif (isset($data['use_for_shipping']) && $data['use_for_shipping'] == 1) {
@@ -237,10 +237,10 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
     {
          if ($this->getRequest()->isPost()) {
             $data = $this->getRequest()->getPost('shipping_method', '');
-            $result = $this->getOnepage()->saveShippingMethod($data);
+            $result = $this->getKetai()->saveShippingMethod($data);
             
             if(!$result) {
-                Mage::dispatchEvent('checkout_controller_onepage_save_shipping_method', array('request'=>$this->getRequest(), 'quote'=>$this->getOnepage()->getQuote()));
+                Mage::dispatchEvent('checkout_controller_onepage_save_shipping_method', array('request'=>$this->getRequest(), 'quote'=>$this->getKetai()->getQuote()));
                 $this->_redirect('*/*/paymentmethod');
             } else {
                 $this->_redirect('*/*/shippingmethod');
@@ -256,7 +256,7 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
             $data = $this->getRequest()->getPost('payment', array());
 
             try {
-                $result = $this->getOnepage()->savePayment($data);
+                $result = $this->getKetai()->savePayment($data);
             }
             catch (Mage_Payment_Exception $e) {
                 if ($e->getFields()) {
@@ -293,22 +293,22 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
                 }
             }
             if ($data = $this->getRequest()->getPost('payment', false)) {
-                $this->getOnepage()->getQuote()->getPayment()->importData($data);
+                $this->getKetai()->getQuote()->getPayment()->importData($data);
             }
-            $this->getOnepage()->saveOrder();
+            $this->getKetai()->saveOrder();
             $this->_redirect('*/*/success');
         }
         catch (Mage_Core_Exception $e) {
             Mage::logException($e);
-            Mage::helper('checkout')->sendPaymentFailedEmail($this->getOnepage()->getQuote(), $e->getMessage());
+            Mage::helper('checkout')->sendPaymentFailedEmail($this->getKetai()->getQuote(), $e->getMessage());
             $result['error_messages'] = $e->getMessage();
 
-            if ($gotoSection = $this->getOnepage()->getCheckout()->getGotoSection()) {
+            if ($gotoSection = $this->getKetai()->getCheckout()->getGotoSection()) {
                 $result['goto_section'] = $gotoSection;
-                $this->getOnepage()->getCheckout()->setGotoSection(null);
+                $this->getKetai()->getCheckout()->setGotoSection(null);
             }
 
-            if ($updateSection = $this->getOnepage()->getCheckout()->getUpdateSection()) {
+            if ($updateSection = $this->getKetai()->getCheckout()->getUpdateSection()) {
                 if (isset($this->_sectionUpdateFunctions[$updateSection])) {
                     $updateSectionFunction = $this->_sectionUpdateFunctions[$updateSection];
                     $result['update_section'] = array(
@@ -326,18 +326,18 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
                 Mage::getSingleton('checkout/session')->addError($result['error_messages']);
             }
             
-            $this->getOnepage()->getQuote()->save();
+            $this->getKetai()->getQuote()->save();
             $this->_redirect('*/*/overview');
         }
         catch (Exception $e) {
             Mage::logException($e);
-            Mage::helper('checkout')->sendPaymentFailedEmail($this->getOnepage()->getQuote(), $e->getMessage());
+            Mage::helper('checkout')->sendPaymentFailedEmail($this->getKetai()->getQuote(), $e->getMessage());
             $this->_redirect('*/*/overview');
         }
     }
 
-    public function getOnepage()
+    public function getKetai()
     {
-        return Mage::getSingleton('ketai/type_onepage');
+        return Mage::getSingleton('ketai/type_ketai');
     }
 }

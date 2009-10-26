@@ -1,5 +1,5 @@
 <?php
-class Rack_Ketai_Model_Type_Onepage extends Mage_Checkout_Model_Type_Onepage
+class Rack_Ketai_Model_Type_Ketai extends Mage_Checkout_Model_Type_Onepage
 {
     /**
      * Enter description here...
