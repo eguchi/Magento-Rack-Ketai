@@ -48,6 +48,15 @@
                 </ketai>
             </updates>
         </layout>
+        <translate>
+            <modules>
+                <Rack_Ketai>
+                    <files>
+                        <default>Rack_Ketai.csv</default>
+                    </files>
+                </Rack_Ketai>
+            </modules>
+        </translate>
     </frontend>
     <default>
         <ketai>

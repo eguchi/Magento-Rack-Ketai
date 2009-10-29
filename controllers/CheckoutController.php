@@ -43,22 +43,16 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
         parent::preDispatch();
         
         $action = $this->getRequest()->getActionName();
-        if (!preg_match('#^(login|register)#', $action)) {
+        /*if (!preg_match('#^(login|register|saveMethod)#', $action)) {
             if (!Mage::getSingleton('customer/session')->authenticate($this, $this->_getHelper()->getMSLoginUrl())) {
                 $this->setFlag('', self::FLAG_NO_DISPATCH, true);
             }
-
-            if (!Mage::helper('checkout')->isMultishippingCheckoutAvailable()) {
-                $this->_redirectUrl($this->_getHelper()->getCartUrl());
-                $this->setFlag('', self::FLAG_NO_DISPATCH, true);
-                return $this;
-            }
-        }
+        }*/
 
         if (!$this->_preDispatchValidateCustomer()) {
             return $this;
         }
-
+/*
         if (Mage::getSingleton('checkout/session')->getCartWasUpdated(true)
             && !in_array($action, array('index', 'login', 'register', 'success'))) {
             $this->_redirectUrl($this->_getHelper()->getCartUrl());
@@ -75,7 +69,7 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
             $this->setFlag('', self::FLAG_NO_DISPATCH, true);
             return;
         }
-        return $this;
+ */        return $this;
     }
 
     public function indexAction()
@@ -340,4 +334,16 @@ class Rack_Ketai_CheckoutController extends Mage_Checkout_Controller_Action
     {
         return Mage::getSingleton('ketai/type_ketai');
     }
+
+    public function saveMethodAction()
+    {
+        if ($this->getRequest()->isPost()) {
+            $method = $this->getRequest()->getPost('checkout_method');
+            $result = $this->getKetai()->saveCheckoutMethod($method);
+            $this->_redirect('*/*/billing');
+        } else {
+            $this0->_redirect('*/*/login');
+        }
+    }
+
 }
