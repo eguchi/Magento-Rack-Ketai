@@ -29,6 +29,11 @@
                     <navigation>Rack_Ketai_Block_Catalog_Navigation</navigation>
                 </rewrite>
             </catalog>
+            <checkout>
+                <rewrite>
+                    <links>Rack_Ketai_Block_Checkout_Link</links>
+                </rewrite>
+            </checkout>
         </blocks>
     </global>
     <frontend>
